@@ -1,19 +1,20 @@
 import { expect, test } from "@playwright/test";
 import { openTwoPeers } from "@baditaflorin/mesh-common/testing";
 
-test("room peers derive the same live prompt", async ({ browser, baseURL }) => {
+test("creating a pact on one peer reaches the other", async ({ browser, baseURL }) => {
   const { a, b, cleanup } = await openTwoPeers(browser, baseURL ?? "", {
-    storagePrefix: "mesh-five-second-rule",
+    storagePrefix: "mesh-deadline-pact",
   });
 
   try {
-    await expect(a.locator(".round-card h2")).toBeVisible();
-    await expect(b.locator(".round-card h2")).toBeVisible();
-    await expect(a.locator(".round-card h2")).toHaveText(
-      await b.locator(".round-card h2").innerText(),
-    );
-    await expect(a.getByText(/player.*in this room/i)).toBeVisible();
-    await expect(b.getByText(/player.*in this room/i)).toBeVisible();
+    const pact = "Ship the shared deadline flow";
+    await a.getByLabel("Commitment").fill(pact);
+    await a.getByRole("button", { name: "Create shared pact" }).click();
+
+    await expect(a.getByText(pact, { exact: true })).toBeVisible();
+    await expect(b.getByText(pact, { exact: true })).toBeVisible();
+    await expect(a.getByText(/left$/)).toBeVisible();
+    await expect(b.getByText(/left$/)).toBeVisible();
   } finally {
     await cleanup();
   }
